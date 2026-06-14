@@ -1,7 +1,7 @@
 "use client";
 
-import { useState, useMemo, useCallback } from 'react';
-import { Target, Info, AlertTriangle, MinusCircle, ChevronRight, RotateCcw, CheckCircle2, BookOpen, Pencil } from 'lucide-react';
+import { useState, useMemo, useCallback, useEffect } from 'react';
+import { Target, Info, AlertTriangle, MinusCircle, ChevronRight, RotateCcw, CheckCircle2, BookOpen, Pencil, Sparkles, TrendingUp, Zap } from 'lucide-react';
 import { Student } from '@/lib/data';
 
 interface SubjectDropSimulatorProps {
@@ -9,7 +9,7 @@ interface SubjectDropSimulatorProps {
 }
 
 // Map NSUT grades to grade points
-const GRADE_POINTS: Record<string, number> = {
+export const GRADE_POINTS: Record<string, number> = {
     'O': 10, 'A+': 9, 'A': 8, 'B+': 7,
     'B': 6, 'C': 5, 'D': 4, 'P': 4,
     'F': 0, 'FD': 0,
@@ -25,8 +25,28 @@ function gradeColor(grade: string) {
     return 'var(--text-secondary)';
 }
 
+// ── Credit Prediction ─────────────────────────────────────
+// Predicts credits for NSUT subject codes (semesters 1–4).
+//
+// Rules derived from NSUT curriculum patterns:
+//   • VA** prefix (e.g. VANH0301, VAPD0101, VAPD0115) → 0 credits (audit / non-credit)
+//   • FCFO** prefix (e.g. FCFO0301) → 2 credits (foundation optional)
+//   • Everything else (e.g. CACSC401, CAMTC305, FCHS0105, FCEE0106) → 4 credits
+export function predictCredits(subjectCode: string): number {
+    const code = subjectCode.toUpperCase().trim();
+
+    // 0-credit: Value-Added / audit courses — VA prefix
+    if (code.startsWith('VA')) return 0;
+
+    // 2-credit: Foundation optional courses — FCFO prefix
+    if (code.startsWith('FCFO')) return 2;
+
+    // Default: most theory + lab courses
+    return 4;
+}
+
 // ── Types ─────────────────────────────────────────────────
-interface SubjectWithCredits {
+export interface SubjectWithCredits {
     subject_code: string;
     grade: string;
     marks: number | string;
@@ -45,9 +65,10 @@ interface SetupProps {
     touchedFields: Set<string>;
     onCreditChange: (code: string, val: number) => void;
     onConfirm: () => void;
+    isPredicted: boolean;
 }
 
-function SetupStep({ semesters, creditMap, touchedFields, onCreditChange, onConfirm }: SetupProps) {
+function SetupStep({ semesters, creditMap, touchedFields, onCreditChange, onConfirm, isPredicted }: SetupProps) {
     const sorted = [...semesters].sort((a, b) => Number(a.semester) - Number(b.semester));
     // A field is considered filled if the user has explicitly typed into it (even 0 is valid for non-credit subjects)
     const totalSubjects = semesters.reduce((s, sem) => s + (sem.subjects || []).length, 0);
@@ -56,17 +77,22 @@ function SetupStep({ semesters, creditMap, touchedFields, onCreditChange, onConf
     return (
         <div>
             <div className="inline-flex items-start gap-2 p-3 rounded-lg mb-4"
-                style={{ backgroundColor: 'var(--accent-light)', borderColor: 'var(--accent)', border: '1px solid' }}>
-                <Info size={15} style={{ color: 'var(--accent)', flexShrink: 0, marginTop: 1 }} />
-                <p className="text-xs leading-relaxed" style={{ color: 'var(--accent)' }}>
-                    Enter the credits for each subject from your marksheet — then we&apos;ll calculate exactly how dropping a subject affects your CGPA.
+                style={{ backgroundColor: isPredicted ? 'var(--success-bg)' : 'var(--accent-light)', borderColor: isPredicted ? 'var(--success)' : 'var(--accent)', border: '1px solid' }}>
+                {isPredicted ? (
+                    <Sparkles size={15} style={{ color: 'var(--success)', flexShrink: 0, marginTop: 1 }} />
+                ) : (
+                    <Info size={15} style={{ color: 'var(--accent)', flexShrink: 0, marginTop: 1 }} />
+                )}
+                <p className="text-xs leading-relaxed" style={{ color: isPredicted ? 'var(--success)' : 'var(--accent)' }}>
+                    {isPredicted
+                        ? 'Credits have been auto-predicted from subject codes. Review and correct if needed, then run the simulator.'
+                        : 'Enter the credits for each subject from your marksheet — then we\'ll calculate exactly how dropping a subject affects your CGPA.'}
                 </p>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3">
                 {sorted.map(sem => {
                     const subs = sem.subjects || [];
-                    const semTotal = subs.reduce((s, sub) => s + (creditMap[sub.subject_code] ?? 0), 0);
 
                     return (
                         <div key={sem.semester} className="card overflow-hidden">
@@ -99,12 +125,20 @@ function SetupStep({ semesters, creditMap, touchedFields, onCreditChange, onConf
                                     {subs.map(sub => {
                                         const isTouched = touchedFields.has(sub.subject_code);
                                         const val = isTouched ? (creditMap[sub.subject_code] ?? 0) : '';
+                                        const predicted = predictCredits(sub.subject_code);
+                                        const isZeroCredit = predicted === 0;
                                         return (
-                                            <tr key={sub.subject_code}>
+                                            <tr key={sub.subject_code} style={{ opacity: isZeroCredit ? 0.45 : 1 }}>
                                                 <td>
                                                     <span className="mono" style={{ color: 'var(--text-primary)' }}>
                                                         {sub.subject_code}
                                                     </span>
+                                                    {isZeroCredit && (
+                                                        <span className="text-[9px] ml-1 px-1 py-0.5 rounded"
+                                                            style={{ backgroundColor: 'var(--surface-elevated)', color: 'var(--text-muted)' }}>
+                                                            audit
+                                                        </span>
+                                                    )}
                                                 </td>
                                                 <td className="text-center">
                                                     <span className="text-xs font-bold" style={{ color: gradeColor(sub.grade) }}>
@@ -164,6 +198,59 @@ function SetupStep({ semesters, creditMap, touchedFields, onCreditChange, onConf
     );
 }
 
+// ── Best Drop Recommendation ──────────────────────────────
+export interface DropRecommendation {
+    subject_code: string;
+    semester: number | string;
+    grade: string;
+    credits: number;
+    cgpaDelta: number;
+    newCGPA: number;
+}
+
+export function computeBestDrop(subjects: SubjectWithCredits[], officialCGPA: number): DropRecommendation | null {
+    // Only consider subjects with credits > 0
+    const eligible = subjects.filter(s => s.credits > 0);
+    if (eligible.length <= 1) return null;
+
+    // Compute full weighted CGPA from all credited subjects
+    let ptsFull = 0, credsFull = 0;
+    eligible.forEach(sub => {
+        const gp = GRADE_POINTS[sub.grade?.toUpperCase()] ?? 0;
+        ptsFull += gp * sub.credits;
+        credsFull += sub.credits;
+    });
+    const creditedFull = credsFull > 0 ? ptsFull / credsFull : officialCGPA;
+
+    let bestDrop: DropRecommendation | null = null;
+
+    for (const candidate of eligible) {
+        const gp = GRADE_POINTS[candidate.grade?.toUpperCase()] ?? 0;
+        const ptsAfter = ptsFull - (gp * candidate.credits);
+        const credsAfter = credsFull - candidate.credits;
+        if (credsAfter <= 0) continue;
+
+        const creditedAfter = ptsAfter / credsAfter;
+        const delta = creditedAfter - creditedFull;
+
+        // We want the drop that MAXIMISES the delta (biggest improvement)
+        if (!bestDrop || delta > bestDrop.cgpaDelta) {
+            bestDrop = {
+                subject_code: candidate.subject_code,
+                semester: candidate.semester,
+                grade: candidate.grade,
+                credits: candidate.credits,
+                cgpaDelta: delta,
+                newCGPA: officialCGPA + delta,
+            };
+        }
+    }
+
+    // Only recommend if it actually improves CGPA
+    if (bestDrop && bestDrop.cgpaDelta > 0.001) return bestDrop;
+    return null;
+}
+
 // ── Simulator Step ────────────────────────────────────────
 interface SimulatorProps {
     subjects: SubjectWithCredits[];
@@ -174,6 +261,12 @@ interface SimulatorProps {
 function SimulatorStep({ subjects, officialCGPA, onEdit }: SimulatorProps) {
     const [droppedSubjects, setDroppedSubjects] = useState<string[]>([]);
     const MAX_DROPS = 2;
+
+    // Filter out 0-credit subjects — they don't affect CGPA at all
+    const creditedSubjects = useMemo(() => subjects.filter(s => s.credits > 0), [subjects]);
+
+    // Auto-recommend the best drop
+    const recommendation = useMemo(() => computeBestDrop(creditedSubjects, officialCGPA), [creditedSubjects, officialCGPA]);
 
     const toggleDrop = (code: string) => {
         if (droppedSubjects.includes(code)) {
@@ -188,7 +281,7 @@ function SimulatorStep({ subjects, officialCGPA, onEdit }: SimulatorProps) {
     const { creditedFull, creditedAfterDrop, newCreditTotal } = useMemo(() => {
         let ptsFull = 0, credsFull = 0;
         let ptsAfter = 0, credsAfter = 0;
-        subjects.forEach(sub => {
+        creditedSubjects.forEach(sub => {
             const gp = GRADE_POINTS[sub.grade?.toUpperCase()] ?? 0;
             ptsFull += gp * sub.credits;
             credsFull += sub.credits;
@@ -202,17 +295,17 @@ function SimulatorStep({ subjects, officialCGPA, onEdit }: SimulatorProps) {
             creditedAfterDrop: credsAfter > 0 ? ptsAfter / credsAfter : officialCGPA,
             newCreditTotal: credsAfter,
         };
-    }, [subjects, droppedSubjects, officialCGPA]);
+    }, [creditedSubjects, droppedSubjects, officialCGPA]);
 
     // Delta from user-entered credits, anchored to official baseline
     const cgpaDelta = creditedAfterDrop - creditedFull;
     const newCGPA = officialCGPA + cgpaDelta;
-    const totalCredits = subjects.reduce((s, sub) => s + sub.credits, 0);
+    const totalCredits = creditedSubjects.reduce((s, sub) => s + sub.credits, 0);
 
     // Group subjects by semester for grid display
     const semesterGroups = useMemo(() => {
         const map = new Map<string | number, SubjectWithCredits[]>();
-        subjects.forEach(sub => {
+        creditedSubjects.forEach(sub => {
             const list = map.get(sub.semester) || [];
             list.push(sub);
             map.set(sub.semester, list);
@@ -227,10 +320,35 @@ function SimulatorStep({ subjects, officialCGPA, onEdit }: SimulatorProps) {
                     return pa - pb;
                 }),
             }));
-    }, [subjects]);
+    }, [creditedSubjects]);
 
     return (
         <div>
+            {/* Auto-recommendation banner */}
+            {recommendation && droppedSubjects.length === 0 && (
+                <div className="flex items-start gap-2.5 p-3 rounded-xl mb-4"
+                    style={{ backgroundColor: 'var(--accent-light)', border: '1px solid var(--accent)' }}>
+                    <Zap size={16} style={{ color: 'var(--accent)', flexShrink: 0, marginTop: 1 }} />
+                    <div className="flex-1 min-w-0">
+                        <p className="text-xs font-bold mb-0.5" style={{ color: 'var(--accent)' }}>
+                            Recommended Drop
+                        </p>
+                        <p className="text-xs leading-relaxed" style={{ color: 'var(--text-secondary)' }}>
+                            Drop <strong style={{ color: 'var(--text-primary)' }}>{recommendation.subject_code}</strong>
+                            {' '}(Sem {recommendation.semester} · {recommendation.credits}cr · Grade {recommendation.grade})
+                            {' '}for the biggest improvement: <strong style={{ color: 'var(--success)' }}>+{recommendation.cgpaDelta.toFixed(3)}</strong>
+                            {' '}→ {recommendation.newCGPA.toFixed(2)} CGPA
+                        </p>
+                        <button
+                            onClick={() => toggleDrop(recommendation.subject_code)}
+                            className="mt-2 text-xs font-bold px-3 py-1 rounded-lg flex items-center gap-1 transition-all"
+                            style={{ backgroundColor: 'var(--accent)', color: '#fff' }}>
+                            <TrendingUp size={12} /> Apply Recommendation
+                        </button>
+                    </div>
+                </div>
+            )}
+
             {/* Live CGPA panel */}
             <div className="flex items-center gap-4 p-3 rounded-xl mb-4"
                 style={{ backgroundColor: 'var(--surface-elevated)', border: '1px solid var(--border)' }}>
@@ -300,6 +418,7 @@ function SimulatorStep({ subjects, officialCGPA, onEdit }: SimulatorProps) {
                                 {subs.map(sub => {
                                     const isDropped = droppedSubjects.includes(sub.subject_code);
                                     const isMaxed = droppedSubjects.length >= MAX_DROPS && !isDropped;
+                                    const isRecommended = recommendation?.subject_code === sub.subject_code && droppedSubjects.length === 0;
                                     return (
                                         <tr
                                             key={`${sub.semester}-${sub.subject_code}`}
@@ -308,7 +427,7 @@ function SimulatorStep({ subjects, officialCGPA, onEdit }: SimulatorProps) {
                                             style={{
                                                 cursor: isMaxed ? 'not-allowed' : 'pointer',
                                                 opacity: isMaxed ? 0.45 : 1,
-                                                backgroundColor: isDropped ? 'var(--danger-bg)' : 'transparent',
+                                                backgroundColor: isDropped ? 'var(--danger-bg)' : isRecommended ? 'var(--accent-light)' : 'transparent',
                                             }}
                                         >
                                             <td>
@@ -318,6 +437,12 @@ function SimulatorStep({ subjects, officialCGPA, onEdit }: SimulatorProps) {
                                                 }}>
                                                     {sub.subject_code}
                                                 </span>
+                                                {isRecommended && (
+                                                    <span className="text-[9px] ml-1 px-1 py-0.5 rounded font-bold"
+                                                        style={{ backgroundColor: 'var(--accent)', color: '#fff' }}>
+                                                        ★ DROP
+                                                    </span>
+                                                )}
                                             </td>
                                             <td className="text-center">
                                                 <span className="text-xs font-bold" style={{ color: gradeColor(sub.grade) }}>
@@ -367,6 +492,7 @@ export function SubjectDropSimulator({ student }: SubjectDropSimulatorProps) {
     const [step, setStep] = useState<'setup' | 'simulate'>('setup');
     const [creditMap, setCreditMap] = useState<Record<string, number>>({});
     const [touchedFields, setTouchedFields] = useState<Set<string>>(new Set());
+    const [isPredicted, setIsPredicted] = useState(false);
 
     // Flatten semesters
     const semesters = useMemo(() => {
@@ -380,6 +506,26 @@ export function SubjectDropSimulator({ student }: SubjectDropSimulatorProps) {
             })),
         }));
     }, [student]);
+
+    // Auto-predict credits on mount and jump straight to simulator
+    useEffect(() => {
+        const allSubjectCodes = semesters.flatMap(sem => sem.subjects.map(s => s.subject_code));
+        if (allSubjectCodes.length === 0) return;
+
+        const predicted: Record<string, number> = {};
+        const touched = new Set<string>();
+
+        allSubjectCodes.forEach(code => {
+            predicted[code] = predictCredits(code);
+            touched.add(code);
+        });
+
+        setCreditMap(predicted);
+        setTouchedFields(touched);
+        setIsPredicted(true);
+        // Auto-advance to simulator since credits are predicted
+        setStep('simulate');
+    }, [semesters]);
 
     const handleCreditChange = useCallback((code: string, val: number) => {
         setTouchedFields(prev => {
@@ -401,13 +547,13 @@ export function SubjectDropSimulator({ student }: SubjectDropSimulatorProps) {
         // Keep the creditMap and touchedFields intact so user's values are preserved
     };
 
-    // Build flat subject list with user-provided credits
+    // Build flat subject list with predicted/user credits
     const allSubjects: SubjectWithCredits[] = useMemo(() => {
         return semesters.flatMap(sem =>
             sem.subjects.map(sub => ({
                 ...sub,
                 semester: sem.semester,
-                credits: creditMap[sub.subject_code] ?? 4,
+                credits: creditMap[sub.subject_code] ?? predictCredits(sub.subject_code),
             }))
         );
     }, [semesters, creditMap]);
@@ -415,7 +561,7 @@ export function SubjectDropSimulator({ student }: SubjectDropSimulatorProps) {
     if (semesters.length === 0 || semesters.every(s => s.subjects.length === 0)) return null;
 
     return (
-        <details className="card overflow-hidden group" open={step === 'simulate'}>
+        <details id="subject-drop-simulator" className="card overflow-hidden group" open={step === 'simulate'}>
             <summary className="flex items-center gap-2 px-4 py-3 cursor-pointer select-none list-none [&::-webkit-details-marker]:hidden">
                 <ChevronRight size={14} className="transition-transform group-open:rotate-90" style={{ color: 'var(--text-muted)' }} />
                 <p className="font-bold text-sm" style={{ color: 'var(--text-primary)' }}>Subject Drop Simulator</p>
@@ -441,6 +587,7 @@ export function SubjectDropSimulator({ student }: SubjectDropSimulatorProps) {
                         touchedFields={touchedFields}
                         onCreditChange={handleCreditChange}
                         onConfirm={handleConfirm}
+                        isPredicted={isPredicted}
                     />
                 ) : (
                     <SimulatorStep

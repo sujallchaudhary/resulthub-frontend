@@ -7,6 +7,7 @@ import { SgpaChart } from '@/components/Charts';
 import { RollNoSaver } from '@/components/RollNoSaver';
 import { SubjectDropSimulator } from '@/components/SubjectDropSimulator';
 import { useCollege } from '@/components/CollegeProvider';
+import { predictCredits, computeBestDrop, GRADE_POINTS, SubjectWithCredits } from '@/components/SubjectDropSimulator';
 import { fetchStudentProfile, Student, Score } from '@/lib/data';
 
 // ── Grade colour mapping ──────────────────────────────────
@@ -330,33 +331,72 @@ export default function StudentProfileClient({ rollNo }: { rollNo: string }) {
 
             {/* Stats bar + Grade Distribution */}
             <div className="card mb-3 overflow-hidden">
-                <div className="grid grid-cols-3 lg:grid-cols-5 stat-grid">
-                    <StatItem
-                        label="CGPA"
-                        value={student.cgpa.toFixed(2)}
-                        color={student.cgpa >= 8 ? 'var(--success)' : student.cgpa >= 6 ? 'var(--warning)' : 'var(--danger)'}
-                    />
-                    <StatItem
-                        label="RANK"
-                        value={`#${student.rank}`}
-                        sub={`of ${(student as any).total_students ? (student as any).total_students.toLocaleString() : 'all students'}`}
-                    />
-                    <StatItem
-                        label="BRANCH RANK"
-                        value={`#${student.branch_rank}`}
-                        sub={`in ${student.branch_code}`}
-                    />
-                    <StatItem
-                        label="CREDITS"
-                        value={`${student.credits_completed}`}
-                        sub="completed"
-                    />
-                    <StatItem
-                        label="SUBJECTS"
-                        value={`${scores.length}`}
-                        sub="total"
-                    />
-                </div>
+                {(() => {
+                    const allSubjects: SubjectWithCredits[] = sgpaList.flatMap(sem =>
+                        (sem.subjects || []).map(sub => ({
+                            subject_code: sub.subject_code,
+                            grade: sub.grade,
+                            marks: sub.marks,
+                            semester: sem.semester,
+                            credits: predictCredits(sub.subject_code),
+                        }))
+                    );
+                    const bestDrop = computeBestDrop(allSubjects, student.cgpa);
+                    const hasDrop = bestDrop && bestDrop.cgpaDelta > 0.001;
+                    const colCount = hasDrop ? 'grid-cols-3 lg:grid-cols-6' : 'grid-cols-3 lg:grid-cols-5';
+                    return (
+                        <div className={`grid ${colCount} stat-grid`}>
+                            <StatItem
+                                label="CGPA"
+                                value={student.cgpa.toFixed(2)}
+                                color={student.cgpa >= 8 ? 'var(--success)' : student.cgpa >= 6 ? 'var(--warning)' : 'var(--danger)'}
+                            />
+                            {hasDrop && bestDrop && (
+                                <div
+                                    className="min-w-0 px-3 py-2.5 cursor-pointer transition-colors"
+                                    style={{ borderLeft: '1px solid var(--border)', backgroundColor: 'var(--success-bg)' }}
+                                    onClick={() => {
+                                        const el = document.getElementById('subject-drop-simulator');
+                                        if (el) {
+                                            el.setAttribute('open', '');
+                                            setTimeout(() => el.scrollIntoView({ behavior: 'smooth', block: 'start' }), 50);
+                                        }
+                                    }}
+                                    title="Click to open Subject Drop Simulator"
+                                >
+                                    <p className="section-label mb-1" style={{ fontSize: '10px', color: 'var(--success)' }}>AFTER DROP ↓</p>
+                                    <p className="font-black text-lg leading-tight" style={{ color: 'var(--success)' }}>
+                                        {bestDrop.newCGPA.toFixed(2)}
+                                    </p>
+                                    <p className="text-[10px] mt-0.5 font-mono truncate" style={{ color: 'var(--text-secondary)' }}
+                                        title={`Drop ${bestDrop.subject_code} (Sem ${bestDrop.semester} · ${bestDrop.credits}cr · Grade ${bestDrop.grade})`}>
+                                        drop {bestDrop.subject_code}
+                                    </p>
+                                </div>
+                            )}
+                            <StatItem
+                                label="RANK"
+                                value={`#${student.rank}`}
+                                sub={`of ${(student as any).total_students ? (student as any).total_students.toLocaleString() : 'all students'}`}
+                            />
+                            <StatItem
+                                label="BRANCH RANK"
+                                value={`#${student.branch_rank}`}
+                                sub={`in ${student.branch_code}`}
+                            />
+                            <StatItem
+                                label="CREDITS"
+                                value={`${student.credits_completed}`}
+                                sub="completed"
+                            />
+                            <StatItem
+                                label="SUBJECTS"
+                                value={`${scores.length}`}
+                                sub="total"
+                            />
+                        </div>
+                    );
+                })()}
                 {Object.keys(gradeDist).length > 0 && (
                     <div className="px-4 py-3 border-t" style={{ borderColor: 'var(--border)' }}>
                         <p className="section-label mb-2">GRADE DISTRIBUTION</p>
@@ -364,6 +404,9 @@ export default function StudentProfileClient({ rollNo }: { rollNo: string }) {
                     </div>
                 )}
             </div>
+
+
+
 
             {/* ── Analytics Section (adaptive layout) ── */}
             {hasTrend ? (

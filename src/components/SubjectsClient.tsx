@@ -4,6 +4,7 @@ import { useState, useMemo, useCallback } from 'react';
 import { SubjectDifficulty, fetchSubjectsDifficulty } from '@/lib/data';
 import { Search, Loader2, AlertTriangle } from 'lucide-react';
 import { RollNoPrompt } from '@/components/RollNoPrompt';
+import { formatGrade } from '@/lib/utils';
 import { ArrowLeft } from 'lucide-react';
 import { useCollege } from '@/components/CollegeProvider';
 
@@ -84,7 +85,7 @@ function SubjectCard({ subject }: { subject: SubjectDifficulty }) {
             {/* Avg GPA */}
             <div>
                 <p className="font-black text-3xl leading-none" style={{ color: 'var(--text-primary)' }}>
-                    {subject.avg_marks.toFixed(2)}
+                    {formatGrade(subject.avg_marks, 2)}
                 </p>
                 <p className="text-xs mt-1" style={{ color: 'var(--text-muted)' }}>avg GPA</p>
             </div>

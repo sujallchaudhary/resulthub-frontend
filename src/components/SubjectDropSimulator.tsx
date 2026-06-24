@@ -3,6 +3,7 @@
 import { useState, useMemo, useCallback, useEffect } from 'react';
 import { Target, Info, AlertTriangle, MinusCircle, ChevronRight, RotateCcw, CheckCircle2, BookOpen, Pencil, Sparkles, TrendingUp, Zap } from 'lucide-react';
 import { Student } from '@/lib/data';
+import { formatGrade } from '@/lib/utils';
 
 interface SubjectDropSimulatorProps {
     student: Student;
@@ -106,7 +107,7 @@ function SetupStep({ semesters, creditMap, touchedFields, onCreditChange, onConf
                                     {sem.sgpa > 0 && (
                                         <span className="font-black text-sm"
                                             style={{ color: sem.sgpa >= 8 ? 'var(--success)' : sem.sgpa >= 6 ? 'var(--warning)' : 'var(--danger)' }}>
-                                            {sem.sgpa.toFixed(2)}
+                                            {formatGrade(sem.sgpa, 2)}
                                         </span>
                                     )}
                                 </div>
@@ -336,8 +337,8 @@ function SimulatorStep({ subjects, officialCGPA, onEdit }: SimulatorProps) {
                         <p className="text-xs leading-relaxed" style={{ color: 'var(--text-secondary)' }}>
                             Drop <strong style={{ color: 'var(--text-primary)' }}>{recommendation.subject_code}</strong>
                             {' '}(Sem {recommendation.semester} · {recommendation.credits}cr · Grade {recommendation.grade})
-                            {' '}for the biggest improvement: <strong style={{ color: 'var(--success)' }}>+{recommendation.cgpaDelta.toFixed(3)}</strong>
-                            {' '}→ {recommendation.newCGPA.toFixed(2)} CGPA
+                            {' '}for the biggest improvement: <strong style={{ color: 'var(--success)' }}>+{formatGrade(recommendation.cgpaDelta, 3)}</strong>
+                            {' '}→ {formatGrade(recommendation.newCGPA, 2)} CGPA
                         </p>
                         <button
                             onClick={() => toggleDrop(recommendation.subject_code)}
@@ -354,20 +355,19 @@ function SimulatorStep({ subjects, officialCGPA, onEdit }: SimulatorProps) {
                 style={{ backgroundColor: 'var(--surface-elevated)', border: '1px solid var(--border)' }}>
                 <div className="flex-1">
                     <p className="text-[10px] font-semibold uppercase tracking-wider mb-0.5" style={{ color: 'var(--text-muted)' }}>Current CGPA</p>
-                    <p className="font-black text-xl mono" style={{ color: 'var(--text-primary)' }}>{officialCGPA.toFixed(2)}</p>
+                    <p className="font-black text-xl mono" style={{ color: 'var(--text-primary)' }}>{formatGrade(officialCGPA, 2)}</p>
                 </div>
                 <ChevronRight size={18} style={{ color: 'var(--text-muted)' }} />
                 <div className="flex-1">
                     <p className="text-[10px] font-semibold uppercase tracking-wider mb-0.5" style={{ color: 'var(--text-muted)' }}>After Drop</p>
                     <p className="font-black text-xl mono" style={{
                         color: cgpaDelta > 0.005 ? 'var(--success)' : cgpaDelta < -0.005 ? 'var(--danger)' : 'var(--text-primary)'
-                    }}>{droppedSubjects.length > 0 ? newCGPA.toFixed(2) : officialCGPA.toFixed(2)}</p>
+                    }}>{droppedSubjects.length > 0 ? formatGrade(newCGPA, 2) : formatGrade(officialCGPA, 2)}</p>
                 </div>
                 <div className="flex-1 text-right">
-                    <p className="text-[10px] font-semibold uppercase tracking-wider mb-0.5" style={{ color: 'var(--text-muted)' }}>Impact</p>
-                    <p className="font-black text-xl mono"
-                        style={{ color: cgpaDelta > 0.005 ? 'var(--success)' : cgpaDelta < -0.005 ? 'var(--danger)' : 'var(--text-muted)' }}>
-                        {droppedSubjects.length === 0 ? '—' : `${cgpaDelta > 0 ? '+' : ''}${cgpaDelta.toFixed(2)}`}
+                    <p className="font-bold text-[10px] uppercase tracking-wider mb-0.5" style={{ color: 'var(--text-muted)' }}>Net Change</p>
+                    <p className="font-black text-xl mono" style={{ color: cgpaDelta > 0.005 ? 'var(--success)' : cgpaDelta < -0.005 ? 'var(--danger)' : 'var(--text-primary)' }}>
+                        {droppedSubjects.length === 0 ? '—' : `${cgpaDelta > 0 ? '+' : ''}${formatGrade(cgpaDelta, 2)}`}
                     </p>
                 </div>
             </div>
@@ -474,13 +474,13 @@ function SimulatorStep({ subjects, officialCGPA, onEdit }: SimulatorProps) {
             {droppedSubjects.length > 0 && cgpaDelta > 0.005 && (
                 <div className="mt-3 p-3 rounded-lg text-xs"
                     style={{ backgroundColor: 'var(--success-bg)', color: 'var(--success)', border: '1px solid var(--success)' }}>
-                    ✓ Dropping {droppedSubjects.join(' & ')} would improve your CGPA by <strong>+{cgpaDelta.toFixed(3)}</strong> — from {officialCGPA.toFixed(2)} → {newCGPA.toFixed(2)}.
+                    ✓ Dropping {droppedSubjects.join(' & ')} would improve your CGPA by <strong>+{formatGrade(cgpaDelta, 3)}</strong> — from {formatGrade(officialCGPA, 2)} → {formatGrade(newCGPA, 2)}.
                 </div>
             )}
             {droppedSubjects.length > 0 && cgpaDelta < -0.005 && (
                 <div className="mt-3 p-3 rounded-lg text-xs"
                     style={{ backgroundColor: 'var(--danger-bg)', color: 'var(--danger)', border: '1px solid var(--danger)' }}>
-                    ⚠ Dropping {droppedSubjects.join(' & ')} would <strong>hurt</strong> your CGPA by {Math.abs(cgpaDelta).toFixed(3)}.
+                    ⚠ Dropping {droppedSubjects.join(' & ')} would <strong>hurt</strong> your CGPA by {formatGrade(Math.abs(cgpaDelta), 3)}.
                 </div>
             )}
         </div>

@@ -6,6 +6,7 @@ import { Sparkles, AlertTriangle, ExternalLink, Loader2 } from 'lucide-react';
 import Link from 'next/link';
 import { LineChart, Line, ResponsiveContainer, YAxis } from 'recharts';
 import { useCollege } from '@/components/CollegeProvider';
+import { formatGrade } from '@/lib/utils';
 
 export function AcademicTwins({ rollNo, autoFetch = false }: { rollNo: string; autoFetch?: boolean }) {
     const [loading, setLoading] = useState(false);
@@ -140,7 +141,7 @@ export function AcademicTwins({ rollNo, autoFetch = false }: { rollNo: string; a
                                     {twin.name}
                                 </p>
                                 <p className="text-xs mono mt-0.5" style={{ color: 'var(--text-muted)' }}>
-                                    {twin.rollNo} · {twin.cgpa.toFixed(2)} CGPA
+                                    {twin.rollNo} · {formatGrade(twin.cgpa, 2)} CGPA
                                 </p>
                             </div>
 

@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { Calculator, Plus, Trash2, RotateCcw, Award } from 'lucide-react';
+import { formatGrade } from '@/lib/utils';
 
 interface SemesterRow {
     id: string;
@@ -230,7 +231,7 @@ export default function CgpaCalculator() {
                                             className="text-4xl font-extrabold"
                                             style={{ color: 'var(--accent)' }}
                                         >
-                                            {cgpa.toFixed(2)}
+                                            {formatGrade(cgpa, 2)}
                                         </span>
                                         <span className="text-xs font-medium uppercase tracking-wider mt-1" style={{ color: 'var(--text-muted)' }}>CGPA</span>
                                     </>

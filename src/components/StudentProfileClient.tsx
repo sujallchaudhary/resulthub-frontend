@@ -9,6 +9,7 @@ import { SubjectDropSimulator } from '@/components/SubjectDropSimulator';
 import { useCollege } from '@/components/CollegeProvider';
 import { predictCredits, computeBestDrop, GRADE_POINTS, SubjectWithCredits } from '@/components/SubjectDropSimulator';
 import { fetchStudentProfile, Student, Score } from '@/lib/data';
+import { formatGrade } from '@/lib/utils';
 
 // ── Grade colour mapping ──────────────────────────────────
 const GRADE_COLORS: Record<string, { bg: string; text: string; dot: string }> = {
@@ -175,7 +176,7 @@ function SemesterSection({ semesters, scores }: {
                                 className="font-black text-sm"
                                 style={{ color: sem.sgpa >= 8 ? 'var(--success)' : sem.sgpa >= 6 ? 'var(--warning)' : 'var(--danger)' }}
                             >
-                                {sem.sgpa > 0 ? sem.sgpa.toFixed(2) : '—'}
+                                {sem.sgpa > 0 ? formatGrade(sem.sgpa, 2) : '—'}
                             </span>
                         </div>
                         {semScores.length > 0 && (
@@ -348,7 +349,7 @@ export default function StudentProfileClient({ rollNo }: { rollNo: string }) {
                         <div className={`grid ${colCount} stat-grid`}>
                             <StatItem
                                 label="CGPA"
-                                value={student.cgpa.toFixed(2)}
+                                value={formatGrade(student.cgpa, 2)}
                                 color={student.cgpa >= 8 ? 'var(--success)' : student.cgpa >= 6 ? 'var(--warning)' : 'var(--danger)'}
                             />
                             {hasDrop && bestDrop && (
@@ -366,7 +367,7 @@ export default function StudentProfileClient({ rollNo }: { rollNo: string }) {
                                 >
                                     <p className="section-label mb-1" style={{ fontSize: '10px', color: 'var(--success)' }}>AFTER DROP ↓</p>
                                     <p className="font-black text-lg leading-tight" style={{ color: 'var(--success)' }}>
-                                        {bestDrop.newCGPA.toFixed(2)}
+                                        {formatGrade(bestDrop.newCGPA, 2)}
                                     </p>
                                     <p className="text-[10px] mt-0.5 font-mono truncate" style={{ color: 'var(--text-secondary)' }}
                                         title={`Drop ${bestDrop.subject_code} (Sem ${bestDrop.semester} · ${bestDrop.credits}cr · Grade ${bestDrop.grade})`}>

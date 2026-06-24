@@ -9,6 +9,7 @@ import {
     BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip,
     ResponsiveContainer, Cell, Legend,
 } from "recharts";
+import { formatGrade } from "@/lib/utils";
 
 const RANGE_ORDER = ["0-4", "4-5", "5-6", "6-7", "7-8", "8-9", "9-10"];
 
@@ -34,7 +35,7 @@ function StatRow({
 }) {
     const aWins = higherWins ? aVal > bVal : aVal < bVal;
     const bWins = higherWins ? bVal > aVal : bVal < aVal;
-    const fmt = (v: number) => (format === "cgpa" ? v.toFixed(2) : v.toLocaleString());
+    const fmt = (v: number) => (format === "cgpa" ? formatGrade(v, 2) : v.toLocaleString());
 
     return (
         <div className="grid grid-cols-3 items-center py-3 border-b" style={{ borderColor: "var(--border)" }}>

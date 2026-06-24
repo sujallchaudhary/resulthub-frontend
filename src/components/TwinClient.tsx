@@ -8,6 +8,7 @@ import { Sparkles, ExternalLink, Loader2, AlertTriangle, ArrowLeft } from 'lucid
 import Link from 'next/link';
 import { LineChart, Line, ResponsiveContainer, YAxis } from 'recharts';
 import { useCollege } from '@/components/CollegeProvider';
+import { formatGrade } from '@/lib/utils';
 
 interface TwinClientProps {
     /** Pre-fill roll number (e.g. from URL param) */
@@ -194,7 +195,7 @@ export default function TwinClient({ initialRollNo, autoLoad = false }: TwinClie
                                     {twin.name}
                                 </p>
                                 <p className="text-xs mono mt-0.5" style={{ color: 'var(--text-muted)' }}>
-                                    {twin.rollNo} · {twin.cgpa.toFixed(2)} CGPA
+                                    {twin.rollNo} · {formatGrade(twin.cgpa, 2)} CGPA
                                 </p>
                             </div>
 

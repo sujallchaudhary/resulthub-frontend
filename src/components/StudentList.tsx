@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import Link from 'next/link';
 import { useCollege, getApiUrl } from '@/components/CollegeProvider';
+import { formatGrade } from '@/lib/utils';
 
 interface Student {
     rollNo: string;
@@ -48,7 +49,7 @@ function CgpaBar({ value }: { value: number }) {
     const color = cgpaColor(value);
     return (
         <div className="flex items-center gap-2">
-            <span className="font-bold text-sm min-w-[3rem]" style={{ color }}>{value.toFixed(2)}</span>
+            <span className="font-bold text-sm min-w-[3rem]" style={{ color }}>{formatGrade(value, 2)}</span>
             <div className="w-16 h-1 rounded-full overflow-hidden" style={{ backgroundColor: 'var(--border)' }}>
                 <div className="h-full rounded-full" style={{ width: `${pct}%`, backgroundColor: color }} />
             </div>
@@ -84,7 +85,7 @@ function SemChips({ student }: { student: Student }) {
                     }}
                 >
                     <span style={{ color: 'var(--text-muted)', fontSize: '0.625rem' }}>S{s.semester}</span>
-                    <span style={{ color: 'var(--text-primary)', fontWeight: 600 }}>{s.sgpa > 0 ? s.sgpa.toFixed(1) : '—'}</span>
+                    <span style={{ color: 'var(--text-primary)', fontWeight: 600 }}>{s.sgpa > 0 ? formatGrade(s.sgpa, 2) : '—'}</span>
                 </span>
             ))}
         </div>
@@ -111,7 +112,7 @@ function MobileStudentCard({ student, displayRank }: { student: Student; display
                 </div>
                 <div className="text-right shrink-0">
                     <span className="font-black text-lg" style={{ color: cgpaColor(student.cgpa) }}>
-                        {student.cgpa.toFixed(2)}
+                        {formatGrade(student.cgpa, 2)}
                     </span>
                     <p className="text-xs" style={{ color: 'var(--text-muted)' }}>CGPA</p>
                 </div>
@@ -134,7 +135,7 @@ function MobileStudentCard({ student, displayRank }: { student: Student; display
                                 color: 'var(--text-secondary)',
                             }}
                         >
-                            S{s.semester}: {s.sgpa > 0 ? s.sgpa.toFixed(1) : '—'}
+                            S{s.semester}: {s.sgpa > 0 ? formatGrade(s.sgpa, 2) : '—'}
                         </span>
                     ))}
                 </div>

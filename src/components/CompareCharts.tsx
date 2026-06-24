@@ -15,6 +15,7 @@ import {
     Cell,
 } from 'recharts';
 import { Student } from '@/lib/data';
+import { formatGrade } from '@/lib/utils';
 
 interface CompareChartsProps {
     students: Student[];
@@ -137,12 +138,12 @@ export function CompareCharts({ students }: CompareChartsProps) {
                                 axisLine={false}
                                 dx={-10}
                                 domain={yDomain}
-                                tickFormatter={(val) => val.toFixed(1)}
+                                tickFormatter={(val) => formatGrade(val, 1)}
                             />
                             <Tooltip
                                 cursor={{ fill: 'rgba(232, 100, 26, 0.05)' }}
                                 contentStyle={CustomTooltipStyle}
-                                formatter={(value: any) => [`${Number(value).toFixed(2)} CGPA`, 'Score']}
+                                formatter={(value: any) => [`${formatGrade(Number(value), 2)} CGPA`, 'Score']}
                                 labelStyle={{ color: '#6B6B6B', marginBottom: '8px', fontWeight: 'bold' }}
                             />
                             <Bar
@@ -189,14 +190,14 @@ export function CompareCharts({ students }: CompareChartsProps) {
                                 axisLine={false}
                                 dx={-10}
                                 domain={yDomain}
-                                tickFormatter={(val) => val.toFixed(1)}
+                                tickFormatter={(val) => formatGrade(val, 1)}
                             />
                             <Tooltip
                                 contentStyle={CustomTooltipStyle}
                                 formatter={(value: any, name: any) => {
                                     // Match roll number back to name for the tooltip
                                     const student = students.find(s => s.rollNo === String(name));
-                                    return [`${Number(value).toFixed(2)} SGPA`, student ? student.name.split(' ')[0] : String(name)];
+                                    return [`${formatGrade(Number(value), 2)} SGPA`, student ? student.name.split(' ')[0] : String(name)];
                                 }}
                                 labelStyle={{ color: '#6B6B6B', marginBottom: '8px', fontWeight: 'bold' }}
                             />

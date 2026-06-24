@@ -4,6 +4,7 @@ import { useState, useCallback, useRef, useEffect } from 'react';
 import { fetchWrapped, WrappedData } from '@/lib/data';
 import { ChevronRight, ChevronLeft, X, Loader2, Sparkles } from 'lucide-react';
 import { useCollege, COLLEGE_LABELS } from '@/components/CollegeProvider';
+import { formatGrade } from '@/lib/utils';
 import { RollNoPrompt } from '@/components/RollNoPrompt';
 
 // ── Slide 1: Intro ────────────────────────────────────────
@@ -68,11 +69,11 @@ function Slide2({ data }: { data: WrappedData }) {
                     Your SGPA this semester
                 </p>
                 <div className="font-black leading-none" style={{ color: 'var(--accent)', fontSize: 'clamp(5rem, 20vw, 8rem)' }}>
-                    {(data.sgpa ?? 0).toFixed(2)}
+                    {formatGrade(data.sgpa ?? 0, 2)}
                 </div>
                 <div className="space-y-2">
                     <p className="text-xl font-semibold" style={{ color: trendColor }}>
-                        {trendLabel} {(data.sgpa_change ?? 0) !== 0 ? `${(data.sgpa_change ?? 0) > 0 ? '+' : ''}${(data.sgpa_change ?? 0).toFixed(2)} from last semester` : 'Same as last semester'}
+                        {trendLabel} {(data.sgpa_change ?? 0) !== 0 ? `${(data.sgpa_change ?? 0) > 0 ? '+' : ''}${formatGrade(data.sgpa_change ?? 0, 2)} from last semester` : 'Same as last semester'}
                     </p>
                     <p className="text-base" style={{ color: 'var(--text-secondary)' }}>
                         Better than <strong style={{ color: 'var(--accent)' }}>{(data.batch_percentile ?? 0).toFixed(1)}%</strong> of your batch
@@ -210,7 +211,7 @@ function Slide6({ data }: { data: WrappedData }) {
     const handleShare = () => {
         const url = `${window.location.origin}/wrapped/${data.rollNo}/${data.semester}`;
         const brandName = `ResultHub${COLLEGE_LABELS[college]}`;
-        const msg = `${data.personality_emoji} I'm "${data.academic_personality}" with ${(data.sgpa ?? 0).toFixed(2)} SGPA this semester!\n\nCheck out my Semester ${data.semester} Wrapped on ${brandName}:\n${url}`;
+        const msg = `${data.personality_emoji} I'm "${data.academic_personality}" with ${formatGrade(data.sgpa ?? 0, 2)} SGPA this semester!\n\nCheck out my Semester ${data.semester} Wrapped on ${brandName}:\n${url}`;
         navigator.clipboard.writeText(msg).then(() => {
             setCopied(true);
             setTimeout(() => setCopied(false), 2000);

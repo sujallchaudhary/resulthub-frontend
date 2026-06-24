@@ -6,6 +6,7 @@ import { Target, Trophy, Award, BookOpen, AlertCircle } from 'lucide-react';
 import { CompareCharts } from '@/components/CompareCharts';
 import { useCollege } from '@/components/CollegeProvider';
 import { fetchStudentProfile, Student } from '@/lib/data';
+import { formatGrade } from '@/lib/utils';
 
 export function CompareResultsClient({ rolls }: { rolls: string[] }) {
     const { college } = useCollege();
@@ -65,7 +66,7 @@ export function CompareResultsClient({ rolls }: { rolls: string[] }) {
                             </div>
                             <div className="text-right">
                                 <p className="text-xs uppercase tracking-wider font-semibold mb-1" style={{ color: 'var(--text-muted)' }}>CGPA</p>
-                                <p className="text-2xl font-bold font-mono" style={{ color: 'var(--accent)' }}>{stu.cgpa.toFixed(2)}</p>
+                                <p className="text-2xl font-bold font-mono" style={{ color: 'var(--accent)' }}>{formatGrade(stu.cgpa, 2)}</p>
                             </div>
                         </div>
 

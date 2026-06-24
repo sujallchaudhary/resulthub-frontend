@@ -10,6 +10,7 @@ import {
 } from "@/components/AnalyticsCharts";
 import { useCollege } from "@/components/CollegeProvider";
 import { fetchStats } from "@/lib/data";
+import { formatGrade } from "@/lib/utils";
 
 interface YearData {
     overall: {
@@ -124,8 +125,8 @@ export default function AnalyticsDashboardClient() {
         .slice(0, 20)
         .map((d) => ({
             name: d.departmentCode,
-            avg: parseFloat((d.AverageCGPA || 0).toFixed(2)),
-            max: parseFloat((d.highestCGPA || 0).toFixed(2)),
+            avg: parseFloat(formatGrade(d.AverageCGPA || 0, 2)),
+            max: parseFloat(formatGrade(d.highestCGPA || 0, 2)),
         }));
 
     // CGPA histogram from cgpaDistribution array
@@ -185,12 +186,12 @@ export default function AnalyticsDashboardClient() {
             {/* KPI bar */}
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
                 <KpiCard label="Total Students" value={overall.totalStudents.toLocaleString()} />
-                <KpiCard label="Average CGPA" value={overall.averageCGPA.toFixed(2)} sub={`Batch ${selectedYear}`} />
-                <KpiCard label="Highest CGPA" value={overall.highestCGPA.toFixed(2)} />
+                <KpiCard label="Average CGPA" value={formatGrade(overall.averageCGPA, 2)} sub={`Batch ${selectedYear}`} />
+                <KpiCard label="Highest CGPA" value={formatGrade(overall.highestCGPA, 2)} />
                 <KpiCard
                     label="Top Department"
                     value={topBranch?.departmentCode || "—"}
-                    sub={topBranch ? `Avg ${topBranch.AverageCGPA.toFixed(2)}` : undefined}
+                    sub={topBranch ? `Avg ${formatGrade(topBranch.AverageCGPA, 2)}` : undefined}
                 />
             </div>
 
@@ -276,7 +277,7 @@ export default function AnalyticsDashboardClient() {
                                         <td><span className="mono" style={{ color: "var(--text-secondary)" }}>{student.rollNo}</span></td>
                                         <td><span className="badge badge-neutral">{student.branch_code}</span></td>
                                         <td className="text-right">
-                                            <span className="font-black" style={{ color: "var(--success)" }}>{student.cgpa.toFixed(2)}</span>
+                                            <span className="font-black" style={{ color: "var(--success)" }}>{formatGrade(student.cgpa, 2)}</span>
                                         </td>
                                     </tr>
                                 );
@@ -321,10 +322,10 @@ export default function AnalyticsDashboardClient() {
                                                 </div>
                                             </td>
                                             <td className="text-right mono" style={{ color: "var(--text-secondary)" }}>{dept.branchSize}</td>
-                                            <td className="text-right font-semibold" style={{ color: "var(--accent)" }}>{dept.AverageCGPA?.toFixed(2)}</td>
-                                            <td className="text-right" style={{ color: "var(--success)" }}>{dept.highestCGPA?.toFixed(2)}</td>
-                                            <td className="text-right" style={{ color: "var(--danger)" }}>{dept.lowestCGPA?.toFixed(2)}</td>
-                                            <td className="text-right mono" style={{ color: "var(--text-secondary)" }}>{dept.medianCGPA?.toFixed(2)}</td>
+                                            <td className="text-right font-semibold" style={{ color: "var(--accent)" }}>{dept.AverageCGPA ? formatGrade(dept.AverageCGPA, 2) : ''}</td>
+                                            <td className="text-right" style={{ color: "var(--success)" }}>{dept.highestCGPA ? formatGrade(dept.highestCGPA, 2) : ''}</td>
+                                            <td className="text-right" style={{ color: "var(--danger)" }}>{dept.lowestCGPA ? formatGrade(dept.lowestCGPA, 2) : ''}</td>
+                                            <td className="text-right mono" style={{ color: "var(--text-secondary)" }}>{dept.medianCGPA ? formatGrade(dept.medianCGPA, 2) : ''}</td>
                                         </tr>
                                     ))}
                             </tbody>

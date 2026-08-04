@@ -11,6 +11,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
     { path: '/compare', priority: 0.7, changeFrequency: 'weekly' as const },
     { path: '/battle', priority: 0.7, changeFrequency: 'weekly' as const },
     { path: '/subjects', priority: 0.7, changeFrequency: 'weekly' as const },
+    { path: '/bulk', priority: 0.6, changeFrequency: 'monthly' as const },
     { path: '/wrapped', priority: 0.7, changeFrequency: 'weekly' as const },
     { path: '/twin', priority: 0.6, changeFrequency: 'weekly' as const },
     { path: '/tools/cgpa-calculator', priority: 0.6, changeFrequency: 'monthly' as const },

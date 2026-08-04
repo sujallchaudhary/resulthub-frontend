@@ -8,6 +8,7 @@ import { CollegeProvider } from '@/components/CollegeProvider';
 import { CollegePicker } from '@/components/CollegePicker';
 import { Navbar } from '@/components/Navbar';
 import { FooterBrand } from '@/components/FooterBrand';
+import { NewFeatureAnnouncement } from '@/components/NewFeatureAnnouncement';
 import { GoogleAnalytics } from '@next/third-parties/google';
 
 const inter = Inter({
@@ -212,6 +213,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
               </div>
             </footer>
           </div>
+          <NewFeatureAnnouncement />
           </CollegeProvider>
         </ThemeProvider>
       </body>

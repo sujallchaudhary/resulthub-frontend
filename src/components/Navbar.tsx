@@ -16,6 +16,7 @@ const navLinks = [
   { href: '/battle', label: 'Battle', priority: 2 },
   { href: '/subjects', label: 'Subjects', priority: 2 },
   { href: '/compare', label: 'Compare', priority: 2 },
+  { href: '/bulk', label: 'Bulk', priority: 3 },
   { href: '/twin', label: 'Twin', priority: 3 },
   { href: '/wrapped', label: 'Wrapped', priority: 3 },
   { href: '/tools/cgpa-calculator', label: 'Tools', priority: 3 },

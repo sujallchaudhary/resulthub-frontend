@@ -151,7 +151,7 @@ export interface WrappedData {
     ai_narrative: string | null;
 }
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'https://resulthubnsut.sujal.info/api';
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'https://api.resulthubnsut.com/api';
 
 function apiUrl(college: string = 'nsut'): string {
     return `${API_BASE_URL}/${college}`;

@@ -112,7 +112,7 @@ export function useCollege() {
 
 /** Returns the API base URL prefixed with the current college */
 export function getApiUrl(college: College): string {
-  const base = process.env.NEXT_PUBLIC_API_BASE_URL || 'https://resulthubnsut.sujal.info/api';
+  const base = process.env.NEXT_PUBLIC_API_BASE_URL || 'https://api.resulthubnsut.com/api';
   return `${base}/${college}`;
 }
 

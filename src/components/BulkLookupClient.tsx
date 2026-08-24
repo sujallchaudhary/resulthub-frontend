@@ -17,12 +17,13 @@ interface Resolution {
     partial?: boolean; // matched via first-name fallback, not the full name
 }
 
-const MAX_ENTRIES = 60;
+const MAX_ENTRIES = 500;
 // Keeps the pasted list + results alive across navigation, so coming back
 // from a student profile restores the page instead of resetting it
 const STORAGE_KEY = 'rh_bulk_state';
 const MAX_MATCHES_SHOWN = 8;
 const CONCURRENCY = 4;
+const YEAR_OPTIONS = ['All', '2025', '2024', '2023', '2022'];
 
 const PLACEHOLDER = `Paste anything — bullets, columns, emails all work:
 
@@ -46,7 +47,7 @@ async function runPool<T>(items: T[], limit: number, fn: (item: T) => Promise<vo
     await Promise.all(workers);
 }
 
-async function resolveEntry(entry: ParsedEntry, college: College): Promise<Resolution> {
+async function resolveEntry(entry: ParsedEntry, college: College, yearFilter: string): Promise<Resolution> {
     // Roll number wins when present; if it doesn't match anyone but we also
     // have a name, fall back to searching by name
     if (entry.roll) {
@@ -58,12 +59,18 @@ async function resolveEntry(entry: ParsedEntry, college: College): Promise<Resol
     const name = entry.name!;
     const tokens = name.split(/\s+/);
 
-    // Full name (with batch hint from email if we have one), then without the
-    // hint, then first name only as a last resort
+    // A user-picked year filter wins over any batch hint parsed from an email;
+    // full name first, then without the year (in case the filter is wrong),
+    // then first name only as a last resort
+    const forcedYear = yearFilter !== 'All' ? yearFilter : undefined;
     const attempts: { query: string; year?: string; partial?: boolean }[] = [];
-    if (entry.batchHint) attempts.push({ query: name, year: entry.batchHint });
-    attempts.push({ query: name });
-    if (tokens.length > 1) attempts.push({ query: tokens[0], partial: true });
+    if (forcedYear) attempts.push({ query: name, year: forcedYear });
+    else if (entry.batchHint) attempts.push({ query: name, year: entry.batchHint });
+    if (!forcedYear) attempts.push({ query: name });
+    if (tokens.length > 1) attempts.push({ query: tokens[0], year: forcedYear, partial: true });
+    // If nothing turned up within the forced year, retry unrestricted rather
+    // than silently reporting "not found" when the filter was just wrong
+    if (forcedYear) attempts.push({ query: name });
 
     for (const attempt of attempts) {
         try {
@@ -191,6 +198,7 @@ export function BulkLookupClient() {
     const [resolving, setResolving] = useState(false);
     const [copied, setCopied] = useState(false);
     const [sortBy, setSortBy] = useState<'input' | 'rank' | 'branch'>('input');
+    const [yearFilter, setYearFilter] = useState('All');
     const [hydrated, setHydrated] = useState(false);
 
     // Restore a previous session (e.g. after opening a profile and coming back)
@@ -203,6 +211,7 @@ export function BulkLookupClient() {
                 if (Array.isArray(state.entries)) setEntries(state.entries);
                 if (state.results) setResults(state.results);
                 if (state.sortBy === 'rank' || state.sortBy === 'branch') setSortBy(state.sortBy);
+                if (typeof state.yearFilter === 'string' && YEAR_OPTIONS.includes(state.yearFilter)) setYearFilter(state.yearFilter);
             }
         } catch {
             // corrupt or unavailable storage — start fresh
@@ -213,11 +222,11 @@ export function BulkLookupClient() {
     useEffect(() => {
         if (!hydrated || resolving) return;
         try {
-            sessionStorage.setItem(STORAGE_KEY, JSON.stringify({ text, entries, results, sortBy }));
+            sessionStorage.setItem(STORAGE_KEY, JSON.stringify({ text, entries, results, sortBy, yearFilter }));
         } catch {
             // storage full or unavailable — persistence is best-effort
         }
-    }, [hydrated, resolving, text, entries, results, sortBy]);
+    }, [hydrated, resolving, text, entries, results, sortBy, yearFilter]);
 
     const preview = useMemo(() => {
         const parsed = parseRoster(text);
@@ -239,7 +248,7 @@ export function BulkLookupClient() {
         setResolving(true);
 
         await runPool(parsed, CONCURRENCY, async (entry) => {
-            const res = await resolveEntry(entry, college);
+            const res = await resolveEntry(entry, college, yearFilter);
             setResults(prev => ({ ...prev, [entry.id]: res }));
         });
         setResolving(false);
@@ -324,6 +333,17 @@ export function BulkLookupClient() {
                         {resolving ? <Loader2 size={15} className="animate-spin" /> : <ClipboardList size={15} />}
                         {resolving ? `Resolving ${doneCount}/${entries.length}…` : 'Find everyone'}
                     </button>
+                    <label className="flex items-center gap-1.5 text-xs" style={{ color: 'var(--text-secondary)' }}>
+                        Year
+                        <select
+                            value={yearFilter}
+                            onChange={(e) => setYearFilter(e.target.value)}
+                            disabled={resolving}
+                            className="input py-1 px-2 text-xs w-auto"
+                        >
+                            {YEAR_OPTIONS.map(y => <option key={y} value={y}>{y}</option>)}
+                        </select>
+                    </label>
                     {text && (
                         <button onClick={handleClear} className="btn-ghost" disabled={resolving}>
                             Clear
@@ -334,6 +354,7 @@ export function BulkLookupClient() {
                             Detected <strong style={{ color: 'var(--text-secondary)' }}>{preview.total}</strong> {preview.total === 1 ? 'entry' : 'entries'}
                             {' · '}{preview.rolls} with roll no{' · '}{preview.names} by name
                             {preview.total > MAX_ENTRIES && ` (first ${MAX_ENTRIES} will be looked up)`}
+                            {yearFilter !== 'All' && ` · batch ${yearFilter} preferred for name matches`}
                         </span>
                     )}
                 </div>

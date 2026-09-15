@@ -20,7 +20,6 @@ const navLinks = [
   { href: '/twin', label: 'Twin', priority: 3 },
   { href: '/wrapped', label: 'Wrapped', priority: 3 },
   { href: '/tools/cgpa-calculator', label: 'Tools', priority: 3 },
-  { href: '/about', label: 'About', priority: 3 },
 ];
 
 const collegeOptions: { id: College; color: string }[] = [

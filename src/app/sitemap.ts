@@ -15,7 +15,6 @@ export default function sitemap(): MetadataRoute.Sitemap {
     { path: '/wrapped', priority: 0.7, changeFrequency: 'weekly' as const },
     { path: '/twin', priority: 0.6, changeFrequency: 'weekly' as const },
     { path: '/tools/cgpa-calculator', priority: 0.6, changeFrequency: 'monthly' as const },
-    { path: '/about', priority: 0.4, changeFrequency: 'monthly' as const },
   ];
 
   return staticRoutes.map((route) => ({
